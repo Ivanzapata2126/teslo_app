@@ -1,12 +1,14 @@
 import 'package:formz/formz.dart';
+import 'package:teslo_shop/features/auth/presentation/providers/auth_provider.dart';
 import 'package:teslo_shop/features/shared/shared.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Provider
-final loginFormProvider = StateNotifierProvider.autoDispose<LoginFormNotifier,LoginFormState>((ref) {
-  return LoginFormNotifier();
+final loginFormProvider =
+    StateNotifierProvider.autoDispose<LoginFormNotifier, LoginFormState>((ref) {
+  final loginUserCallBack = ref.watch(authProvider.notifier).loginUser;
+  return LoginFormNotifier(loginUserCallBack: loginUserCallBack);
 });
-
 
 // State
 class LoginFormState {
@@ -53,7 +55,10 @@ class LoginFormState {
 
 // Notifier
 class LoginFormNotifier extends StateNotifier<LoginFormState> {
-  LoginFormNotifier() : super(LoginFormState());
+  final Function(String, String) loginUserCallBack;
+  LoginFormNotifier({
+    required this.loginUserCallBack,
+  }) : super(LoginFormState());
 
   onEmailChange(String email) {
     final newEmail = Email.dirty(email);
@@ -64,30 +69,25 @@ class LoginFormNotifier extends StateNotifier<LoginFormState> {
   onPasswordChange(String password) {
     final newPassword = Password.dirty(password);
     state = state.copyWith(
-      password: newPassword,
-      isValid: Formz.validate([newPassword,state.email])
-    );
+        password: newPassword,
+        isValid: Formz.validate([newPassword, state.email]));
   }
 
-  onFormSubmit(){
+  onFormSubmit() async {
     _touchEveryField();
-
-    if(!state.isValid) return;
-
+    if (!state.isValid) return;
+    await loginUserCallBack(state.email.value,state.password.value); 
     print(state);
   }
 
-  _touchEveryField(){
+  _touchEveryField() {
     final email = Email.dirty(state.email.value);
     final password = Password.dirty(state.password.value);
 
     state = state.copyWith(
-      isFormPosted: true,
-      email: email,
-      password: password,
-      isValid: Formz.validate([email,password])
-    );
+        isFormPosted: true,
+        email: email,
+        password: password,
+        isValid: Formz.validate([email, password]));
   }
 }
-
-
